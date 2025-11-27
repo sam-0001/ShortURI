@@ -1,14 +1,12 @@
-# app.py
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, request, redirect, send_from_directory
 import sqlite3
 import string, random
 from urllib.parse import urlparse
-
-DB = "urls.db"
-CODE_LENGTH = 6
+import os
 
 app = Flask(__name__)
-app.secret_key = "replace-with-a-secure-random-secret"  # change for production
+DB = "urls.db"
+
 
 def init_db():
     conn = sqlite3.connect(DB)
@@ -24,12 +22,14 @@ def init_db():
     conn.commit()
     conn.close()
 
-def generate_code(length=CODE_LENGTH):
+
+def generate_code(length=6):
     chars = string.ascii_letters + string.digits
     while True:
         code = ''.join(random.choice(chars) for _ in range(length))
         if not code_exists(code):
             return code
+
 
 def code_exists(code):
     conn = sqlite3.connect(DB)
@@ -39,79 +39,73 @@ def code_exists(code):
     conn.close()
     return exists
 
-def save_url(code, long_url):
+
+def save_url(code, url):
     conn = sqlite3.connect(DB)
     cur = conn.cursor()
-    cur.execute("INSERT INTO urls (code, long_url) VALUES (?, ?)", (code, long_url))
+    cur.execute("INSERT INTO urls (code, long_url) VALUES (?, ?)", (code, url))
     conn.commit()
     conn.close()
 
-def get_long_url(code):
+
+def get_url(code):
     conn = sqlite3.connect(DB)
     cur = conn.cursor()
-    cur.execute("SELECT long_url, visits FROM urls WHERE code = ?", (code,))
+    cur.execute("SELECT long_url, visits FROM urls WHERE code=?", (code,))
     row = cur.fetchone()
     conn.close()
-    return row  # (long_url, visits) or None
+    return row
 
-def increment_visits(code):
+
+def increment(code):
     conn = sqlite3.connect(DB)
     cur = conn.cursor()
-    cur.execute("UPDATE urls SET visits = visits + 1 WHERE code = ?", (code,))
+    cur.execute("UPDATE urls SET visits = visits + 1 WHERE code=?", (code,))
     conn.commit()
     conn.close()
 
-def is_valid_url(url):
-    try:
-        parsed = urlparse(url)
-        return parsed.scheme in ("http", "https") and parsed.netloc != ""
-    except:
-        return False
 
-@app.route("/", methods=["GET", "POST"])
-def index():
-    if request.method == "POST":
-        long_url = request.form.get("url", "").strip()
-        custom = request.form.get("custom_code", "").strip()
-        if not long_url:
-            flash("Please enter a URL.")
-            return redirect(url_for("index"))
-        if not is_valid_url(long_url):
-            flash("Please enter a valid URL starting with http:// or https://")
-            return redirect(url_for("index"))
+@app.route("/")
+def home():
+    return send_from_directory(".", "index.html")
 
-        if custom:
-            # optionally allow custom codes
-            if code_exists(custom):
-                flash("Custom code already taken — try another.")
-                return redirect(url_for("index"))
-            code = custom
-        else:
-            code = generate_code()
 
-        save_url(code, long_url)
-        short_url = request.url_root.rstrip("/") + "/" + code
-        return render_template("result.html", short_url=short_url, code=code)
-    return render_template("index.html")
+@app.route("/style.css")
+def css():
+    return send_from_directory(".", "style.css")
+
+
+@app.route("/shorten", methods=["POST"])
+def shorten():
+    long_url = request.form.get("url")
+
+    if not long_url:
+        return "Enter URL"
+
+    code = generate_code()
+    save_url(code, long_url)
+
+    short_url = request.url_root.rstrip("/") + "/" + code
+
+    # manually fill data in result.html
+    with open("result.html") as f:
+        html = f.read()
+        html = html.replace("{{short}}", short_url)
+        html = html.replace("{{code}}", code)
+    return html
+
 
 @app.route("/<code>")
 def go(code):
-    row = get_long_url(code)
-    if row:
-        long_url, _ = row
-        increment_visits(code)
-        return redirect(long_url)
-    return render_template("404.html"), 404
+    row = get_url(code)
+    if not row:
+        return send_from_directory(".", "notfound.html")
 
-@app.route("/stats/<code>")
-def stats(code):
-    row = get_long_url(code)
-    if row:
-        long_url, visits = row
-        short_url = request.url_root.rstrip("/") + "/" + code
-        return render_template("result.html", short_url=short_url, code=code, long_url=long_url, visits=visits)
-    return render_template("404.html"), 404
+    long_url, _ = row
+    increment(code)
+    return redirect(long_url)
+
 
 if __name__ == "__main__":
     init_db()
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(debug=True)
