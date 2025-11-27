@@ -1,0 +1,19 @@
+<!-- templates/404.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Not found</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="container">
+    <div class="card">
+      <h1 class="title">404 — Not found</h1>
+      <p>The short link you requested does not exist.</p>
+      <a class="btn-outline" href="{{ url_for('index') }}">Back home</a>
+    </div>
+  </main>
+</body>
+</html>
