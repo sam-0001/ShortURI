@@ -1,29 +1,17 @@
-<!-- templates/result.html -->
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Short URL</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Short URL</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="container">
     <div class="card">
-      <h1 class="title">Your short link</h1>
+        <h2>Your Short Link</h2>
 
-      <div class="result">
-        <input readonly onclick="this.select()" value="{{ short_url }}" />
-        <div class="meta">
-          {% if long_url %}<div>Original: <a href="{{ long_url }}" target="_blank">{{ long_url }}</a></div>{% endif %}
-          {% if visits is defined %}<div>Visits: {{ visits }}</div>{% endif %}
-        </div>
-        <div class="actions">
-          <a class="btn-outline" href="{{ url_for('index') }}">Shorten another</a>
-          <a class="btn" href="{{ short_url }}" target="_blank">Open link</a>
-        </div>
-      </div>
+        <input value="{{short}}" onclick="this.select()" readonly>
+
+        <a class="btn" href="{{short}}" target="_blank">Open</a>
+        <a class="btn" href="/">Make another</a>
     </div>
-  </main>
 </body>
 </html>
