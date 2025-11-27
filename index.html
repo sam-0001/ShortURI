@@ -1,0 +1,36 @@
+<!-- templates/index.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Shorten URL</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="container">
+    <div class="card">
+      <h1 class="title">Shorten your link</h1>
+      {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash">
+          {% for msg in messages %} <div>{{ msg }}</div> {% endfor %}
+        </div>
+      {% endif %}
+      {% endwith %}
+
+      <form method="post" class="form">
+        <label>Enter URL</label>
+        <input name="url" type="url" placeholder="https://example.com/very/long/link" required>
+        <label>Custom code (optional)</label>
+        <input name="custom_code" type="text" placeholder="mycode (letters & numbers)">
+        <button class="btn" type="submit">Shorten</button>
+      </form>
+
+      <footer class="footer">
+        <small>Built with Flask • Simple SQLite storage</small>
+      </footer>
+    </div>
+  </main>
+</body>
+</html>
